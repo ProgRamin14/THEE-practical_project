@@ -7,8 +7,6 @@ output:
     df_print: paged
 ---
 
-This is just a test to see if Ramin can see the changes.
-
 This notebook is meant to introduce you to simulations and calculations using R. In the following, we will simulate the evolutionary rescue model introduced in the lecture.
 
 ## Your tasks
