@@ -2,8 +2,10 @@
 title: "Evolutionary rescue in flooding events"
 author: "Ramin Dürst & Matthias Schönholzer"
 date: "16.10.2024"
-co-author: "Base code by Claudia Bank"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
+co-author: Base code by Claudia Bank
 ---
 
 ## List of variables and parameters
@@ -11,11 +13,17 @@ output: html_notebook
 -   $N_a$ current size of the wild-type (a) population (changes over time)
 -   $N_A$ current size of the mutant (A) population (changes over time)
 -   `N_init_a` initial population size of wild-type population (should be a positive integer)
--   `N_init_A` initial population size of the mutant population (should be a non-negative integer)
+-   `N_init_A` initial population size of the mutant population (~~should be a non-negative integer~~ –\> will be 0 at start)
 -   `decay_rate` detrimental effect of the environment on the wild type (i.e., the wild-type population decays at this rate; should be \>0 to induce potential extinction)
--   `sel_coeff` selective advantage of the mutant over the wild type (should be \>decay_rate to allow for evolutionary rescue)
+-   `sel_coeff` ~~selective advantage of the mutant over the wild type (should be \>decay_rate to allow for evolutionary rescue)~~ –\> selection coefficient of wild type declines during the event, while the selection coefficient of the mutant increases during an event.
 -   `mut_rate` mutation rate from the wild type to the mutant genotype (should be \>0 and small)
 -   `t_max` number of generations after which to stop the simulation (should be an integer \>0; this is not a model parameter but a setting for the simulations). In the code presented here, the simulation stops automatically if the population goes extinct, or if it recovers and exceeds 1.5 times the original total population size, so `t_max` can be set to a large value without creating extremely long simulation times.
+-   `duration of events` the timespan of generations the event occurs. Depends on the decay rate of the wild type and will be over 1.
+-   `frequency of events` at which frequency the events occur over time
+-   `strength of events` how strong the events affect the population. Is a combination of decay / growth rate and selection coefficient.
+
+## Scenario
+A hypothetical population of plants in a water meadow by a river with two genotypes: one which does bad during flooding (wild type) and one which does good during flooding (mutant). The frequency of being flooded increases due to climate change and depending on frequency, either the wild type persists, the mutant takes over, or both genotypes and therefor the population go extinct. 
 
 ## Simulate one generation of population size change
 
