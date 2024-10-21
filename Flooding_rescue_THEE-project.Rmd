@@ -319,11 +319,21 @@ ph = 1
 for (i in 1:t_max+1){
   if(ph %%2 == 0){
     decay_rate = 0.3
-  else
+  }else{
     decay_rate = 0
   }
   #simulate one gen
+  if (i >= t_switch) {
+    if(ph %% 2 == 0) {
+      t_switch = t_switch + t_event
+      ph = ph + 1
+    }else{
+      t_switch = t_switch + t_pause
+      ph = ph + 1
+    }
+  }
 }
+      
 
 
 
