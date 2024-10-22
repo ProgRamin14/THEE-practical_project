@@ -364,13 +364,18 @@ print(head(flooding_table))
 ```
 
 
+## Simulating a whole population
+
+Generate a population with the influence of events. 
+Here we are trying to determine the right parameters to then fix and later only vary with the frequency (t_pause).
+
 ```{r}
-t_pause = 10 #t_switch
-t_event = 2
+t_pause = 10 #t_switch, time between events
+t_event = 5 #duration of event
 t_switch = t_pause
 sel_coeff = 0.0
 
-flooding_table <- c()
+#flooding_table <- c()
 
 simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_max) {
   # Create the vector in which to save the results
@@ -378,20 +383,20 @@ simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_
   # initiate the variables
   pop_new <- c(N_init_a, N_init_A)
   
-  ph = 0
+  ph = 0 #phase in the beginning of the simulation
 
   
   # run the simulation until generation t_max
   for (i in 1:t_max+1) {
-    if(ph %%2 == 0){
-    decay_rate = 0.05
-    sel_coeff = 0.01
+    if(ph %%2 == 0){ #checking in which phase the simulation is, still needs fine-tuning
+    decay_rate = -0.03 #no event - parameters
+    sel_coeff = -0.025
   }else{
-    decay_rate = -0.1
-    sel_coeff = 0
+    decay_rate = 0.03 #event - parameters
+    sel_coeff = 0.01
   }
 
-  if (i >= t_switch) {
+  if (i >= t_switch) { #changing the phase number, if the simulation is at the end of the phase
     if(ph %% 2 == 0) {
       t_switch = t_switch + t_event
       ph = ph + 1
@@ -411,16 +416,16 @@ simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_
   
   # define the row and column names of the output vector
   rownames(pop_vector) <- (0:t_max)[1:length(pop_vector[,1])] # note that the vector has to be cut if the simulation stopped early
-  colnames(pop_vector) <- c("a","A")
+  colnames(pop_vector) <- c("WT","Mut")
   # return the result
   return(pop_vector)	
 }
 
 # Test the function and plot the result
 # set t_max to a value to be used throughout
-max_gen <- 1000
+max_gen <- 50
 # create your simulation data
-output <- simulate_pop(1000,0,0.35,0,0.2,max_gen) #mut rate and initial mutation pop are 0 to time the decay of WT population
+output <- simulate_pop(1000,0,0.35,0.01,0.005,max_gen) 
 # show the last few lines of the data table
 print(output)
 # plot the output - note that the plot range and the x axis have to be adjusted based on the length of the table

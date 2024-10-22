@@ -180,4 +180,19 @@ colnames(data_table) <- c("r","s","min_gen","no_min")
 print(head(data_table))
 ```
 
-
+repeat {
+      # increase counter by one
+      i<-i+1
+      # run the simulation once
+      run_one <- simulate_pop(init_a,init_A, decay_rate, sel_coeff, m_rate,t_max)
+      # determine total population sizes
+      total_size <- run_one[,1]+run_one[,2]
+      # determine minimum population size
+      min_size <- min(total_size)
+      # determine (first) generation at which this population size occurred
+      min_gen <- as.numeric(which(total_size==0))
+      # enter the data into the table
+      flooding_table <- rbind(flooding_table,c(min_gen,min_size)) # note that we add the varying parameters (decay rate and selection coefficient) to the table too
+      # stop the repeated computation after no_replicates times
+      if(i>replicates) break
+    }
