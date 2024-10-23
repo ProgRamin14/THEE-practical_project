@@ -180,6 +180,7 @@ colnames(data_table) <- c("r","s","min_gen","no_min")
 print(head(data_table))
 ```
 
+```{r}
 repeat {
       # increase counter by one
       i<-i+1
@@ -196,3 +197,287 @@ repeat {
       # stop the repeated computation after no_replicates times
       if(i>replicates) break
     }
+```
+
+## Running replicates (works, but not clean)
+
+```{r}
+
+# set some parameters to fixed values
+init_a <- 1000
+init_A <- 0
+m_rate <- 0.001
+max_gen <- 1000
+# determine how often to run the simulation for each set of parameters
+no_replicates <- 100
+
+# set parameters to vary
+#s_values <- c(0.2,0.3,0.4)
+#r_values <- c(0.05,0.1,0.15)
+
+frequencies <- c(1:10)
+
+# initialize data table - where to collect the results
+data_table <- c()
+#data_table_Nm <- c()
+# run the simulation across all chosen parameters
+# loop over decay rates
+for(t_pause in frequencies){
+  # loop over selection coefficients
+  #for(sval in s_values){
+    # different way of running many simulations: make replicates using "repeat" function with a counter i
+    # reset counter
+    i<-1
+    repeat {
+      # increase counter by one
+      i<-i+1
+      # run the simulation once
+      one_run <- simulate_pop(init_a,init_A,0,0,m_rate,max_gen, t_pause)
+      
+      # determine total population sizes
+      #total_size <- one_run[,1] + one_run [,2]
+      
+      # determine minimum population size
+      #min_size <- min(total_size)
+      # determine (first) generation at which this population size occurred
+      #min_gen <- as.numeric(which(total_size==min_size)[1])
+      
+      final_size <- one_run[nrow(one_run),1] + one_run[nrow(one_run),2]
+      final_gen <- length(one_run[,1])
+      
+      # enter the data into the table
+      data_table <- rbind(data_table,c(t_pause,final_size,final_gen)) # note that we add the varying parameters (decay rate and selection coefficient) to the table too
+      # stop the repeated computation after no_replicates times
+      if(i>no_replicates) break
+    }
+  }
+#}
+# define column names of data table
+colnames(data_table) <- c("f", "final_size","final_gen")
+# show the first lines of the output
+print(head(data_table))
+```
+
+
+
+## "Forever-Event" - Find the time to extinction
+
+Simulating only the WT under "Flooding"-Event circumstances (higher decay rate). Without Mutant, to find the time it takes for the WT to go extinct.
+This code is copied from the code block above (from Line 57).
+
+```{r}
+simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_max) {
+  # Create the vector in which to save the results
+  pop_vector <- c(N_init_a, N_init_A)
+  # initiate the variables
+  pop_new <- c(N_init_a, N_init_A)
+  
+  # run the simulation until generation t_max
+  for (i in 1:t_max+1) {
+    # redefine the current population one generation later
+    pop_new <- simulate_one_gen(pop_new[1],pop_new[2], decay_rate, sel_coeff, mut_rate)
+    # add the new population sizes to the output vector
+    pop_vector <- rbind(pop_vector,pop_new)
+    # condition to stop the simulation before t_max: either the population exceeds 1.5 times the original population size, or it goes extinct
+    if (pop_new[1]+pop_new[2]>=1.5*(N_init_a+ N_init_A) | pop_new[1]+pop_new[2]==0) break
+  }
+```
+  
+## A small analysis
+
+As you can see if you simulate and plot the output several times, there is a lot of stochasticity/variation in the outcome. Therefore, to get interpretable results, we have to run the simulation many times and summarize the outcome depending on the question of our study. Here I am showing an example in which we record the time and the value of the lowest population size (or the time of extinction, if the population size eventually goes to 0). Usually, we want to study this for a range of model parameters; here I am varying the decay rate and the selection coefficient. Other (maybe more interesting) features to study would be the following:
+
+-   rescue probability dependent on initial frequency and selection coefficient
+-   time at which the rescue mutation occurs first if it rescues, vs. if it doesn't rescue, dependent on initial population size and mutation rate
+-   time until the population has recovered in case it becomes rescued, dependent on mutation rate and selection coefficient
+-   ...
+
+```{r}
+#Original
+
+# set some parameters to fixed values
+init_a <- 100
+init_A <- 0
+m_rate <- 0.001
+max_gen <- 1000
+# determine how often to run the simulation for each set of parameters
+no_replicates <- 100
+
+# set parameters to vary
+s_values <- c(0.2,0.3,0.4)
+r_values <- c(0.05,0.1,0.15)
+
+# initialize data table - where to collect the results
+data_table <- c()
+# run the simulation across all chosen parameters
+# loop over decay rates
+for(rval in r_values){
+  # loop over selection coefficients
+  for(sval in s_values){
+    # different way of running many simulations: make replicates using "repeat" function with a counter i
+    # reset counter
+    i<-1
+    repeat {
+      # increase counter by one
+      i<-i+1
+      # run the simulation once
+      one_run <- simulate_pop(init_a,init_A,rval,sval,m_rate,max_gen)
+      # determine total population sizes
+      total_size <- one_run[,1]+one_run[,2]
+      # determine minimum population size
+      min_size <- min(total_size)
+      # determine (first) generation at which this population size occurred
+      min_gen <- as.numeric(which(total_size==min_size)[1])
+      # enter the data into the table
+      data_table <- rbind(data_table,c(rval,sval,min_gen,min_size)) # note that we add the varying parameters (decay rate and selection coefficient) to the table too
+      # stop the repeated computation after no_replicates times
+      if(i>no_replicates) break
+    }
+  }
+}
+# define column names of data table
+colnames(data_table) <- c("r","s","min_gen","no_min")
+# show the first lines of the output
+print(head(data_table))
+```
+
+## Replicating "Forever-Event" for several generations
+
+Finding the average time for the WT to go extinct in an event.
+The code simulates several generations of events and returns the average of how fast the WT population goes extinct, when we have a higher decay rate (r_values in line 225)
+This code is copied from the code block above (from Line 159).
+
+```{r}
+# set some parameters to fixed values, m_rate is 0
+init_a <- 100
+init_A <- 0
+m_rate <- 0
+max_gen <- 1000
+# determine how often to run the simulation for each set of parameters
+no_replicates <- 750
+
+# set parameters to vary, r_values (decay) is fixed
+s_values <- c(0.2,0.3,0.4)
+r_values <- 0.01
+
+# initialize data table - where to collect the results
+data_table <- c()
+# run the simulation across all chosen parameters
+# loop over decay rates
+for(rval in r_values){
+  # loop over selection coefficients
+  for(sval in s_values){
+    # different way of running many simulations: make replicates using "repeat" function with a counter i
+    # reset counter
+    i<-1
+    repeat {
+      # increase counter by one
+      i<-i+1
+      # run the simulation once
+      one_run <- simulate_pop(init_a,init_A,rval,sval,m_rate,max_gen)
+      # determine total population sizes
+      total_size <- one_run[,1]+one_run[,2]
+      # determine minimum population size
+      min_size <- min(total_size)
+      # determine (first) generation at which this population size occurred
+      min_gen <- as.numeric(which(total_size==0))
+      # enter the data into the table
+      data_table <- rbind(data_table,c(rval,sval,min_gen,min_size)) # note that we add the varying parameters (decay rate and selection coefficient) to the table too
+      # stop the repeated computation after no_replicates times
+      if(i>no_replicates) break
+    }
+  }
+}
+# define column names of data table
+colnames(data_table) <- c("r","s","min_gen","no_min")
+# show the first lines of the output
+print(head(data_table))
+#mean of generations after which the WT population goes extinct
+#mean.extWT <- mean(min_gen)
+
+#print(mean.extWT)
+```
+
+## Implement several Events
+
+The goal: Find a range of interesting frequencies of events at which the WT population starts struggling or goes extinct.
+This code simulate a generation after another, depending on in which generation it starts. A list contains several starts of Events which then determines the decay rate at which the generation is simulated. This code only works for one generation and ignores, that an events lasts longer than one generation.
+The code was written from scratch and copied from the first code block (about the simulate_one_gen)
+
+```{r}
+decay_rate = c(0.35, 1.1) #decay rate in presence and absence of event --> strength of event
+freq_event = 10 #every 10 generations an event happens
+dur_event = 2 #event has a duration of 2 generations
+t_max = 100
+gen = 0
+start_event = list()
+
+while (gen < t_max){
+  start_event <- append(start_event, gen)
+  gen = gen + dur_event + freq_event
+}
+#print(start_event)
+#start_event[1]
+#start_event[2]
+#start_event[3]
+#start_event[4]
+#start_event[5]
+#start_event <- c(start_event,start_event+1,start_event+2)
+simulate_one_gen_2 <- function(N_a, N_A, decay_rate, growth_rate, sel_coeff, mut_rate, gen) {
+  if(gen %in% start_event) {
+    decay_rate = 0.35
+    growth_rate = 0
+  }
+  else{
+      decay_rate = 0
+      growth_rate = 1.1
+  }
+  offsp_a <- rpois(1, N_a * (1-decay_rate))
+  offsp_A <- rpois(1, N_A * (1-decay_rate+sel_coeff))
+  # draw new mutants according to Poisson distribution
+  mut_a_to_A <- rpois(1, offsp_a * mut_rate)
+  
+  # determine new population sizes of wild type and mutant
+  N_a_new <- max(offsp_a - mut_a_to_A, 0)
+  N_A_new <-  offsp_A + mut_a_to_A
+  
+  return(c(N_a_new, N_A_new))
+}
+
+print(simulate_one_gen_2(100, 0, 0, 1.2, 0, 0, 3))
+
+
+#This was just to test, did not work
+#for (i in 1:t_max+1) {
+ # new_pop <- simulate_one_gen_2(N_a, N_A, decay_rate, growth_rate, sel_coeff, mut_rate, gen)
+  #vector_pop <- rbind(vector_pop, new_pop)
+  #if(new)
+
+
+```
+
+  # define the row and column names of the output vector
+  rownames(pop_vector) <- (0:t_max)[1:length(pop_vector[,1])] # note that the vector has to be cut if the simulation stopped early
+  colnames(pop_vector) <- c("a","A")
+  # return the result
+  return(pop_vector)	
+}
+
+
+# Test the function and plot the result
+# set t_max to a value to be used througout
+max_gen <- 1000
+# create your simulation data
+output <- simulate_pop(1000,0,0.35,0,0,max_gen) #mut rate and initial mutation pop are 0 to time the decay of WT population
+# show the last few lines of the data table
+print(output)
+# plot the output - note that the plot range and the x axis have to be adjusted based on the length of the table
+# determine x axis range 
+x_range <- 0:(length(output[,1])-1)
+# this plots the total population size
+plot(x_range,output[,1]+output[,2],type='l',ylim=c(0,max(output[,1]+output[,2])),xlab = "Generation",ylab = "Population size")
+# add number of wild type individuals
+lines(x_range,output[,1], col="blue")
+# add number of mutant individuals
+lines(x_range,output[,2], col="red")
+```
