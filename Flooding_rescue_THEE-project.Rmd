@@ -150,7 +150,7 @@ Generate a population with the influence of events.
 Here we are trying to determine the right parameters to then fix and later only vary with the frequency (t_pause).
 
 ```{r}
-t_pause = 5 #t_switch, time between events
+t_pause = 1 #t_switch, time between events
 t_event = 5 #duration of event (Working: 5)
 t_switch = t_pause
 sel_coeff = 0.0
@@ -191,7 +191,7 @@ simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_
     # add the new population sizes to the output vector
     pop_vector <- rbind(pop_vector,pop_new)
     # condition to stop the simulation before t_max: either the population exceeds 1.5 times the original population size, or it goes extinct
-    if (pop_new[1]+pop_new[2]>=4*(N_init_a+ N_init_A) | pop_new[1]+pop_new[2]==0) break
+    if (pop_new[1]+pop_new[2]>=1.5*(N_init_a+ N_init_A) | pop_new[1]+pop_new[2]==0) break
   }
   
   # define the row and column names of the output vector
@@ -265,6 +265,14 @@ for(t_pause in frequencies){
       size_wt <- one_run[nrow(one_run),1]
       size_mut <- one_run[nrow(one_run),2]
       
+         # Count surviving populations
+    if (size_wt > 0) {
+      surviving_Nw[t_pause] <- surviving_Nw[t_pause] + 1
+    }
+    if (size_mut > 0) {
+      surviving_Nm[t_pause] <- surviving_Nm[t_pause] + 1
+    }
+      
       data_table_Nw <- rbind(data_table_Nw,c(t_pause,size_wt,final_gen))
       data_table_Nm <- rbind(data_table_Nm,c(t_pause,size_mut,final_gen))
       
@@ -284,11 +292,120 @@ print(head(data_table_Pop))
 ## Analyze data - find the means of the population sizes
 
 ```{r}
-average_pop <- aggregate(final_size ~ t_pause, data = data_table_Pop, FUN = mean)
+# Set some parameters to fixed values
+init_a <- 1000
+init_A <- 0
+m_rate <- 0.001
+max_gen <- 1000
+no_replicates <- 100
 
-colnames(average_pop) <- c("t_pause", "average_final_size")
+# Frequencies to vary
+frequencies <- c(1:10)
 
-print(average_pop)
+# Initialize data tables to collect results
+data_table_Pop <- c()
+data_table_Nw <- c()
+data_table_Nm <- c()
+data_table_comp <- c()
+
+# Initialize counters for survival
+surviving_Nw <- numeric(length(frequencies))
+surviving_Nm <- numeric(length(frequencies))
+
+# Run the simulation across all chosen parameters
+for (t_pause in frequencies) {
+  i <- 1
+  repeat {
+    # Run the simulation once
+    one_run <- simulate_pop(init_a, init_A, 0, 0, m_rate, max_gen, t_pause)
+    
+    # Determine the final sizes of the populations
+    size_wt <- one_run[nrow(one_run), 1]
+    size_mut <- one_run[nrow(one_run), 2]
+    
+    # Count surviving populations
+    if (size_wt > 0) {
+      surviving_Nw[t_pause] <- surviving_Nw[t_pause] + 1
+    }
+    if (size_mut > 0) {
+      surviving_Nm[t_pause] <- surviving_Nm[t_pause] + 1
+    }
+
+    # Enter the data into the tables
+    final_size <- size_wt + size_mut
+    final_gen <- nrow(one_run)
+    
+    data_table_Pop <- rbind(data_table_Pop, c(t_pause, final_size, final_gen))
+    data_table_Nw <- rbind(data_table_Nw, c(t_pause, size_wt, final_gen))
+    data_table_Nm <- rbind(data_table_Nm, c(t_pause, size_mut, final_gen))
+    
+    portion_WT <- size_wt / final_size
+    portion_Mut <- size_mut / final_size
+    
+    data_table_comp <- rbind(data_table_comp, c(t_pause, portion_WT, portion_Mut))
+    
+    # Stop after the specified number of replicates
+    if (i >= no_replicates) break
+    i <- i + 1
+  }
+}
+
+# Define column names of data tables
+colnames(data_table_Pop) <- c("f", "Final Pop", "final_gen")
+colnames(data_table_Nw) <- c("f", "Final WT", "final_gen")
+colnames(data_table_Nm) <- c("f", "Final Mut", "final_gen")
+
+# Calculate ratios of surviving populations
+ratios <- data.frame(
+  t_pause = frequencies,
+  Nw_survival_ratio = surviving_Nw / no_replicates,
+  Nm_survival_ratio = surviving_Nm / no_replicates
+)
+
+#plot(ratios[,1], ratios[,2], xlab = "Frequencies of events", ylab = "Survival-ratio", main = "Survival-ratio of WT", col = "chocolate", type = "p", )
+#lines(ratios[,1], ratios[,3], col = "darkolivegreen4", type = "l")
+
+```
+
+#Plottig the data
+```{r}
+# Ensure ratios are numeric
+ratios$t_pause <- as.numeric(as.character(ratios$t_pause))
+ratios$Nw_survival_ratio <- as.numeric(as.character(ratios$Nw_survival_ratio))
+ratios$Nm_survival_ratio <- as.numeric(as.character(ratios$Nm_survival_ratio))
+
+# Plot for Wildtype survival ratio
+plot(ratios$t_pause, ratios$Nw_survival_ratio, 
+     xlab = "Pause between Events", 
+     ylab = "Survival Ratio", 
+     main = c(paste("Survival Ratio of wildtype and mutant"), paste("depending on the frequency of events")), 
+     col = "chocolate", 
+     type = "b")  # Use a solid circle for points
+
+# Add lines for Mutation survival ratio
+lines(ratios$t_pause, ratios$Nm_survival_ratio, 
+      col = "darkolivegreen4", 
+      type = "b")  # Use points and lines
+
+# Optionally, add a legend
+legend("bottomright", legend = c("Wildtype", "Mutation"), 
+       col = c("chocolate", "darkolivegreen4"), 
+       pch = c(16, NA), lty = c(NA, 1))
+
+```
+
+```{r}
+mean_comp_tot <- c()
+
+mean_comp_WT <- aggregate(data_table_comp$Proportion_WT ~ f, data = data_table_comp, FUN = mean)
+mean_comp_Mut <- aggregate(data_table_comp$Proportion_Mut ~ f, data = data_table_comp, FUN = mean)
+mean_comp_tot <- rbind(mean_comp_tot, c(mean_comp_WT, mean_comp_Mut))
+
+#library(ggplot2)
+
+#ggplot(data_table_comp, aes(fill=condition, y=data_table_comp$, x=specie)) + 
+    geom_bar(position="dodge", stat="identity")
+
 ```
 
 
