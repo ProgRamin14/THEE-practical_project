@@ -22,9 +22,12 @@ co-author: "Base code by Claudia Bank"
 -   `frequency of events` at which frequency the events occur over time
 -   `strength of events` how strong the events affect the population. Is a combination of decay / growth rate and selection coefficient.
 
-## Scenario
+## Scenario / Biological question
 
-A hypothetical population of plants in a water meadow by a river with two genotypes: one which does bad during flooding (wild type) and one which does good during flooding (mutant). The frequency of being flooded increases due to climate change and depending on frequency, either the wild type persists, the mutant takes over, or both genotypes and therefor the population go extinct.
+A hypothetical population of plants in a water meadow by a river with two genotypes: one which does bad during flooding (wildtype) and one which does good during flooding (mutant). The frequency of being flooded increases due to climate change and depending on frequency, either the wildtype persists, the mutant takes over, or both genotypes and therefor the population go extinct.
+
+How does the increasing frequency of flooding events affect the wildtype and mutant population of a water meadow?
+
 
 ## Simulate one generation of population size change
 
@@ -165,7 +168,7 @@ max_gen <- 1000
 # create your simulation data
 output <- simulate_pop(1000,0,0.35,0.01,0.001,max_gen, t_pause) #(Working: 1000, 0, 0.35, 0.01, 0.001, max_gen)
 # show the last few lines of the data table
-print(output)
+print(tail(output))
 # plot the output - note that the plot range and the x axis have to be adjusted based on the length of the table
 # determine x axis range 
 x_range <- 0:(length(output[,1])-1)
@@ -179,8 +182,21 @@ lines(x_range,output[,2], col="red")
 ```
 
 
-##  Generating multiple replicates and Analyze data
-To calculate the probability of rescue & find the means of the population sizes
+## Generating multiple replicates at different frequencies and extracting the data
+
+After generating a single population with a given frequency (t_event), we now want to create replicates at multiple frequencies. We then create different data-tables which contain different values and can be used for further calculations and plots:
+
+-   data_table_Pop: frequency, final total population, final generation
+
+-   data_table_Nw: frequency, final population of wildtype, final generation
+
+-   data_table_Nm: frequency, final population of mutant, final generation
+
+-   data_table_comp: frequency, proportion of wildtype, proportion of mutant
+
+While the first three data-tables give the final population of either the total, wildtype, or mutant and the corresponding generation depending on the frequency, the fourth data-table contains the proportions of wildtype and mutant depending on the frequency.
+
+Additionally, we count the number of wildtype- and mutant-populations which survived after the set conditions and calculated the ratio of surviving.
 
 ```{r}
 # Set some parameters to fixed values
@@ -260,6 +276,11 @@ ratios <- data.frame(
 ```
 
 ## Plottig the data
+
+# Plotting the survival-ratio of the wildtype
+
+Here we plot the survival-ratio of the wildtype depending on the pause between events according to the data we got above. The higher the pause between events, the lower the frequency of events. The graph shows that the less frequent events happen (the higher the pause between events is), the higher is the probability of survival.
+
 ```{r}
 # Ensure ratios are numeric
 ratios$t_pause <- as.numeric(as.character(ratios$t_pause))
@@ -272,7 +293,7 @@ ratios$Nm_survival_ratio <- as.numeric(as.character(ratios$Nm_survival_ratio))
 plot(ratios$t_pause, ratios$Nw_survival_ratio, 
      xlab = "Pause between Events", 
      ylab = "Survival Ratio", 
-     main = c(paste("Survival Ratio of wildtype and mutant"), paste("depending on the frequency of events")), 
+     main = c(paste("Survival Ratio of wildtype"), paste("depending on the frequency of events")), 
      col = "chocolate", 
      type = "b",
      pch = c(16))  # Use a solid circle for points
@@ -288,6 +309,11 @@ legend("bottomright", legend = c("Wildtype"),
        pch = c(16, NA))
 
 ```
+
+# Mean proportion of wildtype and mutant according to the frequency
+
+We want to show the composition of the population at different frequencies. In the first step, we create two data-tables with the frequencies and the corresponding average proportion of the mutant and the wildtype. The values are extracted from the data_table_comp created under "Generating multiple replicates at different frequencies and extracting the data". The two data-tables are bind together into one table, with which we create the stacked barplot. 
+The plot shows that populations at high frequencies (low pauses) contain mainly mutants, while a low frequency (high pause) results in populations mainly compromised of wildtypes.
 
 ```{r}
 mean_comp_tot <- c()
@@ -323,7 +349,9 @@ ggplot(mean_comp_long, aes(x = as.factor(f), y = Proportion, fill = Type)) +
        title = "Mean Proportion of Wildtype and Mutant by Event Frequency") +
   scale_fill_manual(values = c("Proportion_WT" = "chocolate", "Proportion_Mut" = "darkolivegreen4"),
                     labels = c("Mutant","Wildtype")) +
-  theme_minimal()
+  theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))  # Center the title
+
 
 
 #library(ggplot2)
@@ -332,6 +360,13 @@ ggplot(mean_comp_long, aes(x = as.factor(f), y = Proportion, fill = Type)) +
     #geom_bar(position="dodge", stat="identity")
 
 ```
+
+# Plot for Exctinction rate depending of the Frequency of events
+
+Here we want to see, how the probability of the population going extinct changes with different frequencies of events. We extract the data for extinction from the large data table (data_table_Pop) by finding the ratio of times the population went extinct to the total amount of replicates. This ratio is then visualized in a plot.
+
+The plot shows that with increasing time between each event decreases the probability that the population goes extinct. 
+
 ```{r}
 #data_table_Pop
 # Ensure data_table_Pop is a data frame
@@ -374,6 +409,12 @@ plot(extinction_df[,1], extinction_df[,2],
 
 ```
 
+# Plot of Distribution of final Generations depending on the Frequency
+
+Here we want to see the relationship between the pause between the events and the number of generations, the population was simulated. The conditions for the simulation to end were either extinction or the population growing to a size of 1.5 times the starting population.
+In this plot it can be seen, that the populations at medium frequencies ran for slightly longer. 
+This can be explained with the following theories: Populations with short pauses either die out quickly or grow fast. There is a aspect of stochasticity with the mutation rate. At longer pauses between the events the mutation cannot fix and the wildtype then grows to a large population. At the intermediate pauses the population struggles more to  grow to the stopping condition. There are to few events for the mutation to take over and to few for the wildtype to just grow without problems. 
+
 ```{r}
 ggplot(data_table_Pop, aes(x = as.factor(f), y = final_gen)) +
   geom_boxplot(fill = "darkgoldenrod1") +
@@ -384,6 +425,11 @@ ggplot(data_table_Pop, aes(x = as.factor(f), y = final_gen)) +
 
 
 ```
+
+# Plot of Counts of final Generations depending on the Frequency (Histogram)
+
+Similar to the plot before, we want to visualize the relationship of the final generations and the frequencies of the events. The plot is not very clear, but it shows the same effect. On the higher end of generations are the populations with intermediate pauses (green-blueish color). Longer pauses show shorter simulation runs (pink color).
+
 ```{r}
 ggplot(data_table_Pop, aes(x = final_gen, fill = as.factor(f))) +
   geom_histogram(binwidth = 10, position = "identity", alpha = 0.6) +
@@ -394,6 +440,10 @@ ggplot(data_table_Pop, aes(x = final_gen, fill = as.factor(f))) +
   theme(plot.title = element_text(hjust = 0.5))  # Center the title
 
 ```
+
+# Plotting the extinction-generation across different frequencies
+
+At last we wanted to show the differences of the generation of extinction depending on the frequency. To do this, we extracted the replicates which went extinct from the data-table from the whole population. Then we created a table which contains the corresponding frequencies and the number of the final generation and created a scatterplot. We included the a trend line, which indicates the mean of the frequencies. As can be seen in the plot, at certain frequencies there are no datapoints, which means at these frequencies the population did not go extinct throughout all replicates.
 
 ```{r}
 
@@ -430,23 +480,12 @@ ggplot(extinct_data, aes(x=Frequency, y=Extinction_Generation)) +
 
 
 ```
-```{r}
-# Numbers to allocate
-numbers <- 1:6
 
-# Randomly shuffle the numbers
-shuffled_numbers <- sample(numbers)
+## Biological explanations
 
-# Split the numbers equally between person A and person B
-person_a <- shuffled_numbers[1:3]
-person_b <- shuffled_numbers[4:6]
+Our model simulates a simple scenario, where a plant population in a floodplain near a river experiences regular flooding events. The frequencies of these flooding increases due to climate change. The flooding of the plains is detrimental for the wildtype population, but there is a mutation which would be beneficial in case of flooding and benefits during events. 
+We want to simulate this scenario with different frequencies of events and see how the population changes. 
+For this, we calculated and plotted multiple parameters and variables to show these relationships. 
 
-# Print the results
-cat("Person A gets:", person_a, "\n")
-cat("Person B gets:", person_b, "\n")
+From our model we can deduce, that the frequency of flooding events has a large impact on the fate and composition of the population. With increasing frequency/shorter pauses between events, the mutation becomes more beneficial and rescues the population. At lower frequencies/long pauses the wildtype stays dominant in the population and persists.
 
-```
-
-
-## Test area:
-Code from the "Test Area" (just some coding bits that were used to try to figure stuff out, nothing really worked) and the part about reproducability were moved, for the sake of tidiness and better overview, to a different document (THEE-Project-Appendix).
