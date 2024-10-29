@@ -50,7 +50,7 @@ simulate_one_gen <- function(N_a, N_A, decay_rate, sel_coeff, mut_rate) {
   return(c(N_a_new, N_A_new))
 }
 # Test the function
-print(simulate_one_gen(100,0,0.1,0.2,0.0))
+print(simulate_one_gen(100,0,0.1,0.2,0.001))
 ```
 
 ## Simulate a population trajectory
@@ -608,7 +608,6 @@ print(extinct_data)
 #Plot the data
 ggplot(extinct_data, aes(x=Frequency, y=Extinction_Generation)) +
        geom_point(col = "aquamarine4", pch = 19) +
-  xlim(c(1,10)) +
   geom_smooth(method=lm , color="coral", se=FALSE) + 
   labs(title = "Generation of Extinction across different Frequencies", x = "Pause between Events", y = "Extinction Generation") +
   theme_bw() +
@@ -618,8 +617,8 @@ ggplot(extinct_data, aes(x=Frequency, y=Extinction_Generation)) +
     legend.box.just = "right",
     legend.margin = margin(6, 6, 6, 6)
     ) +
-  theme(plot.title = element_text(hjust = 0.5)) # Center the title
-  
+  theme(plot.title = element_text(hjust = 0.5)) + # Center the title
+  scale_x_continuous(breaks = 1:10, limits = c(1,10)) # Set x-axis to show only natural numbers 1 through 10
 
 
 
