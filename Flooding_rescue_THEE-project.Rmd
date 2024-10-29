@@ -173,7 +173,7 @@ print(tail(output))
 # determine x axis range 
 x_range <- 0:(length(output[,1])-1)
 # this plots the total population size
-plot(x_range,output[,1]+output[,2],type='l',ylim=c(0,max(output[,1]+output[,2])),xlab = "Generation",ylab = "Population size")
+plot(x_range,output[,1]+output[,2],type='l',ylim=c(0,max(output[,1]+output[,2])),xlab = "Generations",ylab = "Population size")
 # add number of wild type individuals
 lines(x_range,output[,1], col="blue")
 # add number of mutant individuals
@@ -432,7 +432,7 @@ plot(extinction_df[,1], extinction_df[,2],
 ```
 #trying stuff out (namely plotting extinction rate of MUT and WT separately)
 ```{r}
-par(mfrow = c(1,3))
+par(mfrow = c(1,2))
 #data_table_Pop
 # Ensure data_table_Pop is a data frame
 data_table_Pop <- as.data.frame(data_table_Pop)
@@ -464,13 +464,13 @@ extinction_df <- data.frame(
 # Print or view the extinction ratios
 print(extinction_df)
 
-plot(extinction_df[,1], extinction_df[,2], 
-     type = "b", 
-     pch = 16, 
-     col = "darkorchid3",
-     ylab = "Extinction Probability Tot-Pop", 
-     xlab = "Pause between Events",
-     main = "Tot-Pop-Extinction rate dep. frequency")
+#plot(extinction_df[,1], extinction_df[,2], 
+    # type = "b", 
+    # pch = 16, 
+    # col = "darkorchid3",
+    # ylab = "Extinction Probability Tot-Pop", 
+    # xlab = "Pause between Events",
+    # main = "Tot-Pop-Extinction rate dep. frequency")
 
 #data_table_Pop
 # Ensure data_table_Pop is a data frame
@@ -509,7 +509,7 @@ plot(extinction_WT_df[,1], extinction_WT_df[,2],
      col = "chartreuse4",
      ylab = "Extinction Probability WT", 
      xlab = "Pause between Events",
-     main = "WT-Extinction rate dep. frequency")
+     main = c(paste("WT-Extinction probability"), paste("depending on frequency")))
 
 
 #data_table_Pop
@@ -549,7 +549,7 @@ plot(extinction_MUT_df[,1], extinction_MUT_df[,2],
      col = "brown3",
      ylab = "Extinction Probability MUT", 
      xlab = "Pause between Events",
-     main = "MUT-Extinction rate dep. frequency")
+     main = c(paste("Mut-Extinction probability"), paste("depending on frequency")))
 par(mfrow= c(1,1))
 ```
 

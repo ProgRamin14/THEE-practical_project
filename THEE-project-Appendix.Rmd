@@ -636,3 +636,14 @@ colnames(data_table_Nm) <- c("f", "Final Mut","final_gen")
 print(head(data_table_Pop))
 ```
 
+```{r}
+# Possible people
+people <- c("Person A", "Person B")
+
+# Randomly select who will do the task
+assigned_person <- sample(people, 1)
+
+# Print the result
+cat(assigned_person, "will do the biorender-task.\n")
+
+```
