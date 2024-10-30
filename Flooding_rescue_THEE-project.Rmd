@@ -647,6 +647,43 @@ ggplot(extinct_data, aes(x = Frequency, y = Extinction_Generation)) +
 
 ```
 
+```{r}
+library(ggplot2)
+
+# Set parameters for the event pattern
+total_time <- 60                # Total time on the x-axis
+pause_duration <- 6             # Time between events
+event_duration <- 3             # Duration of each event
+event_strength <- 10            # Height of the event on y-axis
+
+# Generate time points and initialize event strengths
+time_points <- seq(0, total_time, by = 1)
+event_strengths <- rep(0, length(time_points))  # Start with zeroes
+
+# Loop to create events based on pause and duration
+for (t in seq(0, total_time, by = pause_duration + event_duration)) {
+  start_idx <- which(time_points == t)
+  end_idx <- which(time_points == (t + event_duration))
+  if (length(start_idx) > 0 && length(end_idx) > 0) {
+    event_strengths[start_idx:(end_idx - 1)] <- event_strength
+  }
+}
+
+# Create a data frame for plotting
+event_data <- data.frame(Time = time_points, Strength = event_strengths)
+
+# Plot the event curve using geom_step for sharp transitions
+ggplot(event_data, aes(x = Time, y = Strength)) +
+  geom_step(direction = "hv", color = "darkblue", size = 1) +
+  labs(title = "Intermediate Frequency of Flooding",
+       x = "Time",
+       y = "Strength of Flood") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
 ## Biological explanations
 
 Our model simulates a simple scenario, where a plant population in a floodplain near a river experiences regular flooding events. The frequencies of these flooding increases due to climate change. The flooding of the plains is detrimental for the wildtype population, but there is a mutation which would be beneficial in case of flooding and benefits during events. 
