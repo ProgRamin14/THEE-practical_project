@@ -647,3 +647,59 @@ assigned_person <- sample(people, 1)
 cat(assigned_person, "will do the biorender-task.\n")
 
 ```
+
+
+Plotting just the Wildtype in a barplot
+```{r}
+mean_comp_WT_long <- mean_comp %>%
+  pivot_longer(cols = "Proportion_WT", 
+               names_to = "Type", 
+               values_to = "Proportion")
+ggplot(mean_comp_WT_long, aes(x = as.factor(f), y = Proportion, fill = Type)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(x = "Pause between Events", 
+       y = "Mean Proportion", 
+       title = "Mean Proportion of Wildtype by Event Frequency") +
+  scale_fill_manual(values = ("Proportion_WT" = "#D55E00"),
+                    labels = ("Wildtype")) +
+  theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+Plotting a visualisation of our model
+```{r}
+library(ggplot2)
+
+# Set parameters for the event pattern
+total_time <- 60                # Total time on the x-axis
+pause_duration <- 6             # Time between events
+event_duration <- 3             # Duration of each event
+event_strength <- 10            # Height of the event on y-axis
+
+# Generate time points and initialize event strengths
+time_points <- seq(0, total_time, by = 1)
+event_strengths <- rep(0, length(time_points))  # Start with zeroes
+
+# Loop to create events based on pause and duration
+for (t in seq(0, total_time, by = pause_duration + event_duration)) {
+  start_idx <- which(time_points == t)
+  end_idx <- which(time_points == (t + event_duration))
+  if (length(start_idx) > 0 && length(end_idx) > 0) {
+    event_strengths[start_idx:(end_idx - 1)] <- event_strength
+  }
+}
+
+# Create a data frame for plotting
+event_data <- data.frame(Time = time_points, Strength = event_strengths)
+
+# Plot the event curve using geom_step for sharp transitions
+ggplot(event_data, aes(x = Time, y = Strength)) +
+  geom_step(direction = "hv", color = "darkblue", size = 1) +
+  labs(title = "Intermediate Frequency of Flooding",
+       x = "Time",
+       y = "Strength of Flood") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
