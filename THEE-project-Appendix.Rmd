@@ -703,3 +703,75 @@ ggplot(event_data, aes(x = Time, y = Strength)) +
   theme(plot.title = element_text(hjust = 0.5))
 ```
 
+
+# plotting the different final population composition (monomorphic or polymorphic)
+```{r}
+# Load required packages
+library(ggplot2)
+library(reshape2)
+
+# Assuming the previous simulation code is already run and the data_table_Nw and data_table_Nm are populated
+
+# Calculate final numbers for WT and Mut
+final_numbers <- data.frame(
+  f = frequencies,
+  Final_WT = numeric(length(frequencies)),
+  Final_Mut = numeric(length(frequencies))
+)
+
+# Extract final sizes from data_table_Nw and data_table_Nm
+for (i in 1:length(frequencies)) {
+  final_numbers$Final_WT[i] <- data_table_Nw[data_table_Nw[, 1] == frequencies[i], 2]
+  final_numbers$Final_Mut[i] <- data_table_Nm[data_table_Nm[, 1] == frequencies[i], 2]
+}
+
+# Melt the data frame to long format for plotting
+melted_final_numbers <- melt(final_numbers, id.vars = "f", 
+                              measure.vars = c("Final_WT", "Final_Mut"))
+
+# Create the bar plot
+ggplot(melted_final_numbers, aes(x = factor(f), y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Final Population Sizes of WT and Mutant",
+       x = "Frequency (f)",
+       y = "Final Population Size",
+       fill = "Population Type") +
+  theme_minimal()
+
+```
+
+# another plot which shows different extinction proportion etc in one graph
+```{r}
+# Load required packages
+install.packages("reshape2")
+library(ggplot2)
+library(reshape2)
+
+# Calculate the proportions of extinction and survival
+extinction_proportions <- data.frame(
+  f = frequencies,
+  Nw_Extinction_Proportion = 1 - (surviving_Nw / no_replicates),
+  Nm_Extinction_Proportion = 1 - (surviving_Nm / no_replicates),
+  Nw_Survival_Proportion = surviving_Nw / no_replicates,
+  Nm_Survival_Proportion = surviving_Nm / no_replicates
+)
+
+# Melt the data frame to long format
+melted_data <- melt(extinction_proportions, id.vars = "f", 
+                    measure.vars = c("Nw_Extinction_Proportion", "Nm_Extinction_Proportion", 
+                                     "Nw_Survival_Proportion", "Nm_Survival_Proportion"))
+
+# Create the plot
+ggplot(melted_data, aes(x = f, y = value, color = variable, linetype = variable)) +
+  geom_line(size = 1) +
+  labs(title = "Proportions of Survival and Extinction",
+       x = "Frequency (f)",
+       y = "Proportion",
+       color = "Population Status",
+       linetype = "Population Status") +
+  theme_minimal() +
+  scale_color_manual(values = c("blue", "red", "green", "orange")) +
+  theme(legend.position = "bottom")
+
+
+```
