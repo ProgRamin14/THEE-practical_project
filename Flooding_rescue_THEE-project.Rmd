@@ -47,6 +47,7 @@ We want to observe the numbers of wild-type and mutant individuals over time. As
 
 ```{r}
 
+#set.seed(1) # making it reproducible
 simulate_one_gen <- function(N_a, N_A, decay_rate, sel_coeff, mut_rate) {
   # draw offspring according to Poisson distribution
   offsp_a <- rpois(1, N_a * (1-decay_rate))
@@ -70,6 +71,8 @@ We can now track the dynamics of the population from one generation to another, 
 
 ```{r}
 
+#set.seed(2) # making it reproducible
+
 simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_max) {
   # Create the vector in which to save the results
   pop_vector <- c(N_init_a, N_init_A)
@@ -88,7 +91,7 @@ simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_
   
   # define the row and column names of the output vector
   rownames(pop_vector) <- (0:t_max)[1:length(pop_vector[,1])] # note that the vector has to be cut if the simulation stopped early
-  colnames(pop_vector) <- c("a","A")
+  colnames(pop_vector) <- c("Wildtype","Mutant")
   # return the result
   return(pop_vector)	
 }
@@ -115,11 +118,103 @@ legend("top", legend = c("Total Population", "Wildtype", "Mutant"),
        lty = 1)
 ```
 
+### plotting a "forever event"
+
+We want to simulate a "forever event" to see how fast the wildtype goes extinct on average. This will serve us as a starting point, as this value is the maximum duration the flooding-event can have. 
+
+```{r}
+simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_max, t_pause, t_event, t_switch) {
+  # Create the vector in which to save the results
+  pop_vector <- c(N_init_A, N_init_a)
+  # initiate the variables
+  pop_new <- c(N_init_A, N_init_a)
+  
+  ph = 0  # phase in the beginning of the simulation (even: no flood, odd: flood)
+  
+  # Track the extinction generation of the wildtype
+  extinction_gen <- NA
+
+  # Run the simulation until generation t_max
+  for (i in 1:t_max) {
+    # Determine whether a flood event or a pause is ongoing
+    if(ph %% 2 == 0){  # No flood (even phase)
+      decay_rate = -0.02  # "growth rate" of wildtype when no flood is present
+      sel_coeff = -0.015  # selection coefficient of wildtype when no flood is present 
+    } else {  # Flood is present (odd phase)
+      decay_rate = 0.03   # decay rate of wildtype if flood is present
+      sel_coeff = 0.05    # selection coefficient of mutant during flood
+    }
+
+    if (i >= t_switch) { # Check if we need to switch the phase
+      if(ph %% 2 == 0) {  # After no flood, start flood
+        t_switch = t_switch + t_event
+        ph = ph + 1
+      } else {  # After flood, pause for some time
+        t_switch = t_switch + t_pause
+        ph = ph + 1
+      }
+    }
+    
+    # Simulate the next generation
+    pop_new <- simulate_one_gen(pop_new[1], pop_new[2], decay_rate, sel_coeff, mut_rate)
+    
+    # Add the new population sizes to the output vector
+    pop_vector <- rbind(pop_vector, pop_new)
+    
+    # Track extinction: if wildtype population reaches 0
+    if (pop_new[1] <= 0 && is.na(extinction_gen)) {
+      extinction_gen <- i  # Record the extinction generation
+      break  # Stop the simulation once the wildtype is extinct
+    }
+    
+    # Optional condition to stop if total population size exceeds some threshold
+    if (pop_new[1] + pop_new[2] == 0) break
+  }
+  
+  # Return the result: the population data and the extinction generation
+  return(list(population_data = pop_vector, extinction_gen = extinction_gen))
+}
+
+# Function for running multiple simulations and averaging the extinction generations
+run_multiple_simulations <- function(N_init_A, N_init_a, decay_rate, sel_coeff, mut_rate, t_max, t_pause, t_event, t_switch, n_simulations) {
+  extinction_generations <- numeric(n_simulations)  # Vector to store extinction generations
+
+  for (i in 1:n_simulations) {
+    output_result <- simulate_pop(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_max, t_pause, t_event, t_switch)
+    extinction_generations[i] <- output_result$extinction_gen
+  }
+
+  # Calculate the average extinction generation, ignoring NA values (in case some simulations didn't result in extinction)
+  avg_extinction_gen <- mean(extinction_generations, na.rm = TRUE)
+  return(avg_extinction_gen)
+}
+
+# Define simulation parameters
+max_gen <- 1000
+n_simulations <- 1000  # Number of simulations
+t_pause <- 1           # Time between floods
+t_event <- 500         # Duration of the flood
+t_switch <- t_pause    # Time to switch between flood and no flood
+N_init_A <- 1000       # Initial wildtype population size
+N_init_a <- 0          # Initial mutant population size (wildtype only in the start)
+
+# Run multiple simulations and calculate the average extinction generation
+avg_extinction_gen <- run_multiple_simulations(N_init_A, N_init_a, 0, -0.015, 0.001, max_gen, t_pause, t_event, t_switch, n_simulations)
+
+# Print the average extinction generation
+cat("Average extinction generation of wildtype over", n_simulations, "simulations:", avg_extinction_gen, "\n")
+
+
+```
+
+
 ### Simulating a whole population
 
 Generate a population with the influence of events. Here we introduce and define the pause between events `t_pause` and the duration of the event `t_event`. Depending on in which state the system is (namely if the meadow is flooded or not) the decay-rate of the wildtype and the selection coefficient of the mutant vary. The function now calculates a whole population (with the function from above) with the addition a flood-event.
 
 ```{r}
+
+#set.seed(3) # making it reproducible
 
 t_pause = 1 # time between floods with generations as unit (initial value: 1)
 t_event = 5 # duration of the flood (initial value: 5)
@@ -213,6 +308,8 @@ Additionally, we count the number of wildtype- and mutant-populations which surv
 
 ```{r}
 
+#set.seed(4) # making it reproducible
+
 # Set some parameters to fixed values
 init_a <- 1000 # initial value: 1000
 init_A <- 0 # initial value: 0
@@ -284,8 +381,6 @@ ratios <- data.frame(
   Nm_survival_ratio = surviving_Nm / no_replicates
 )
 
-#plot(ratios[,1], ratios[,2], xlab = "Frequencies of events", ylab = "Survival-ratio", main = "Survival-ratio of WT", col = "chocolate", type = "p", )
-#lines(ratios[,1], ratios[,3], col = "darkolivegreen4", type = "l")
 
 ```
 
@@ -296,6 +391,8 @@ ratios <- data.frame(
 Here we plot the survival-ratio of the wildtype depending on the pause between events according to the data we got above. The higher the pause between events, the lower the frequency of events and vice versa. The graph shows that the less frequent events happen (the higher the pause between events is), the higher is the probability of survival.
 
 ```{r}
+
+#set.seed(5) # making it reproducible
 
 # Ensure ratios are numeric
 ratios$t_pause <- as.numeric(as.character(ratios$t_pause))
@@ -324,15 +421,21 @@ We want to show the composition of the population at different frequencies. In t
 
 ```{r}
 
+#set.seed(6) # making it reproducible
+
 #creating two data-tables with frequency and corresponding proportion average of WT and MUT
 mean_comp_WT <- aggregate(data_table_comp[,2]~ f, data = data_table_comp, FUN = mean)
 mean_comp_Mut <- aggregate(data_table_comp[,3] ~ f, data = data_table_comp, FUN = mean)
 
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
-library(tidyr)
+options(warn = -1) # suppressing warnings of library (for neater Notebook)
 
+# Load necessary libraries
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+options(warn = 0) # setting warnings to default
+ 
 # Combine the two data frames into one
 # Ensure the names are consistent for merging
 colnames(mean_comp_WT) <- c("f", "Proportion_WT")
@@ -362,6 +465,65 @@ ggplot(mean_comp_long, aes(x = as.factor(f), y = Proportion, fill = Type)) +
 
 ```
 
+### 
+```{r}
+
+#set.seed(15)
+# Load required packages
+library(ggplot2)
+library(reshape2)
+
+# Assuming frequencies is defined as a vector of frequencies, e.g.:  # Example, replace with your actual frequencies
+
+# Example of data_table_Nw and data_table_Nm as data frames (replace with your actual data):
+# data_table_Nw <- data.frame(frequency = c(0.1, 0.2, 0.3, 0.1, 0.2), size = c(100, 200, 300, 0, 250))
+# data_table_Nm <- data.frame(frequency = c(0.1, 0.2, 0.3, 0.1, 0.2), size = c(120, 220, 320, 0, 270))
+
+# Initialize an empty data frame to store final results
+final_numbers <- data.frame(
+  f = frequencies,
+  Final_WT = numeric(length(frequencies)),
+  Final_Mut = numeric(length(frequencies))
+)
+
+# Loop through the frequencies and calculate the average final population sizes for WT and Mut
+for (i in 1:length(frequencies)) {
+  # Get the sizes for the current frequency (checking if the data is a matrix or data frame)
+  if (is.data.frame(data_table_Nw)) {
+    wt_size <- data_table_Nw[data_table_Nw$frequency == frequencies[i], "size"]
+    mut_size <- data_table_Nm[data_table_Nm$frequency == frequencies[i], "size"]
+  } 
+  else if (is.matrix(data_table_Nw)) {
+    wt_size <- data_table_Nw[data_table_Nw[, 1] == frequencies[i], 2]
+    mut_size <- data_table_Nm[data_table_Nm[, 1] == frequencies[i], 2]
+  }
+
+  # Calculate the average (mean) size including zeros
+  final_numbers$Final_WT[i] <- ifelse(length(wt_size) > 0, mean(wt_size), 0)
+  final_numbers$Final_Mut[i] <- ifelse(length(mut_size) > 0, mean(mut_size), 0)
+}
+
+# Melt the data frame to long format for plotting
+melted_final_numbers <- melt(final_numbers, id.vars = "f", 
+                              measure.vars = c("Final_WT", "Final_Mut"))
+
+# Create the stacked bar plot
+ggplot(melted_final_numbers, aes(x = factor(f), y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(title = "Final Population Sizes of WT and Mutant",
+       x = "Frequency",
+       y = "Average Final Population Size",
+       fill = "Type") +
+  scale_fill_manual(values = c("Final_WT" = "#D55E00", "Final_Mut" = "#56B4E9"), 
+                    labels = c("Wildtype", "Mutant")) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+```
+
+
 ### Exctinction rate depending on the frequency of events
 
 Here we want to see, how the probability of the population going extinct changes with different frequencies of events. We extract the data for extinction from the large data table (`data_table_Pop`) by finding the ratio between the times the population went extinct and the total amount of replicates. This ratio is then visualized in a plot.
@@ -369,6 +531,8 @@ Here we want to see, how the probability of the population going extinct changes
 The plot shows that with increasing time between each event, the probability that the population goes extinct decreases.
 
 ```{r}
+
+#set.seed(7) # making it reproducible
 
 # Ensure data_table_Pop is a data frame
 data_table_Pop <- as.data.frame(data_table_Pop)
@@ -417,6 +581,8 @@ legend("topright", legend = "Total Population",
 The following plots show the extinction rate for the wildtype and the mutant separately. The code was copied from above and the names were adjusted accordingly.
 
 ```{r}
+
+#set.seed(8) # making it reproducible
 
 # enabling plots to be in the same window
 par(mfrow = c(1,2))
@@ -514,7 +680,7 @@ par(mfrow= c(1,1))
 
 ### Distribution of final generations depending on the frequency (boxplot)
 
-Here we want to see the relationship between the frequency of events and the final number of generations (the generation at which the simulation stopped. The conditions for the simulation to end were either extinction or the population growing to a size of 1.5 times the starting wildtype population. \
+Here we want to see the relationship between the frequency of events and the final number of generations (the generation at which the simulation stopped. The conditions for the simulation to end were either extinction or the population growing to a size of 1.5 times the starting wildtype population.\
 In this boxplot it can be seen, that the populations at medium frequencies ran for slightly longer. This can be explained with the following theories:
 
 -   Populations with very short or very long pauses either die out quickly or grow fast. At longer pauses between the events the mutation cannot fix and the wildtype then grows to a large population
@@ -524,6 +690,9 @@ In this boxplot it can be seen, that the populations at medium frequencies ran f
 -   There are to few events for the mutation to take over and to few for the wildtype to just grow without problems and therefore at the intermediate pauses the population struggles more to grow / decline to either stopping condition
 
 ```{r}
+
+#set.seed(9) # making it reproducible
+
 # generating a boxplot of the final generation and the frequency
 ggplot(data_table_Pop, aes(x = as.factor(f), y = final_gen)) +
   geom_boxplot(fill = "#E69F00") +
@@ -541,6 +710,8 @@ Similar to the plot before, we want to visualize the relationship of the final g
 
 ```{r}
 
+#set.seed(10) # making it reproducible
+
 # generating a histogram of the final generation and the frequency
 ggplot(data_table_Pop, aes(x = final_gen, fill = as.factor(f))) +
   geom_histogram(binwidth = 10, position = "identity", alpha = 0.6) +
@@ -557,6 +728,8 @@ ggplot(data_table_Pop, aes(x = final_gen, fill = as.factor(f))) +
 At last we wanted to specify the graphs from above and just look at the generation of extinction and show the differences between the frequencies. To do this, we extracted the replicates which went extinct from the data-table from the whole population (`data_table_Pop`). We then created a table which contains the corresponding frequencies and the number of the final generation and created a scatterplot. We included the trend line, which indicates the mean extinction-generation of each frequency. As can be seen in the plot, at certain frequencies there are no datapoints, which means that at these frequencies the population did not go extinct throughout all replicates.
 
 ```{r}
+
+#set.seed(11) # making it reproducible
 
 # Filter for populations that went extinct (Final_Pop == 0)
 extinct_pop <- subset(data_table_Pop, Final_Pop == 0)
