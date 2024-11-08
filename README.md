@@ -3,16 +3,16 @@
 
 ### List of content of repository:
 ### Flooding_rescue_THEE-project.Rmd
-This is the main code containing the model, created with RStudio, is expanding on base code by Claudia Bank.
-
-### Impact of frequency of floodings on plant populations_PPP.pptx
-The powerpoint presentation of our project presentation.
+This is the main code containing the model, created with RStudio, and is expanded on the base code by Claudia Bank.
 
 ### THEE-project-Appendix.Rmd
-Contains chuncks of code, that were not used in the finished code or weder use to try things out. Nothing really important, is mainly there for hoarding.
+Contains chuncks of code, that were not used in the finished code or were used to try things out. Nothing really important, is mainly there for hoarding.
 
 ### evolutionary-rescue-basic-discrete-time.Rmd
 Base Code provided by Claudia Bank. Simulates a simple evolutionary rescue.
+
+### Impact of frequency of floodings on plant populations_PPP.pptx
+The powerpoint presentation of our project presentation.
 
 ### Papers (Folder)
 Contains several different papers that were or will be used for research for the final report.
