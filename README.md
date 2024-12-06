@@ -2,6 +2,12 @@
 ## By Ramin Dürst & Matthias Schönholzer (base code provided by Claudia Bank)
 
 ### List of content of repository:
+### Report_FloodingEvoRescue_Model_ScM_DüR_First draft.pdf
+This is the first draft of the report (due 08.11.2024).
+
+### Report_FloodingEvoRescue_Model_ScM_DüR_Final draft.pdf / .docx
+These are the final drafts of the report as a word- and pdf-file (due 06.12.2024). 
+
 ### Flooding_rescue_THEE-project.Rmd
 This is the main code containing the model, created with RStudio, and is expanded on the base code by Claudia Bank.
 
