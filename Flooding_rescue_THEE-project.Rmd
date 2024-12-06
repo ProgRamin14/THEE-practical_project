@@ -47,7 +47,7 @@ We want to observe the numbers of wild-type and mutant individuals over time. As
 
 ```{r}
 
-set.seed(1) # making it reproducible
+set.seed(1) # making it reproducible --> seed = 1
 
 simulate_one_gen <- function(N_a, N_A, decay_rate, sel_coeff, mut_rate) {
   # draw offspring according to Poisson distribution
@@ -72,7 +72,7 @@ We can now track the dynamics of the population from one generation to another, 
 
 ```{r}
 
-set.seed(2) # making it reproducible
+set.seed(2) # making it reproducible --> seed = 2
 
 simulate_pop <- function(N_init_a, N_init_A, decay_rate, sel_coeff, mut_rate, t_max) {
   # Create the vector in which to save the results
@@ -127,7 +127,7 @@ Generate a population with the influence of events. Here we introduce and define
 
 ```{r}
 
-set.seed(3) # making it reproducible
+set.seed(3) # making it reproducible --> seed = 3
 
 t_pause = 1 # time between floods with generations as unit (initial value: 1)
 t_event = 5 # duration of the flood (initial value: 5)
@@ -221,7 +221,7 @@ Additionally, we count the number of wildtype- and mutant-populations which surv
 
 ```{r}
 
-set.seed(4) # making it reproducible
+set.seed(4) # making it reproducible --> seed = 4 for frequency 1:10 OR seed = 12 for frequency 1:20
 
 # Set some parameters to fixed values
 init_a <- 1000 # initial value: 1000
@@ -305,7 +305,7 @@ Here we plot the survival-ratio of the wildtype depending on the pause between e
 
 ```{r}
 
-set.seed(5) # making it reproducible
+set.seed(5) # making it reproducible --> seed = 5
 
 # Ensure ratios are numeric
 ratios$t_pause <- as.numeric(as.character(ratios$t_pause))
@@ -334,7 +334,7 @@ We want to show the composition of the population at different frequencies. In t
 
 ```{r}
 
-set.seed(6) # making it reproducible
+set.seed(6) # making it reproducible --> seed = 6 for frequency 1:10 OR seed = 13 for frequency 1:20
 
 #creating two data-tables with frequency and corresponding proportion average of WT and MUT
 mean_comp_WT <- aggregate(data_table_comp[,2]~ f, data = data_table_comp, FUN = mean)
@@ -381,7 +381,8 @@ ggplot(mean_comp_long, aes(x = as.factor(f), y = Proportion, fill = Type)) +
 ### 
 ```{r}
 
-set.seed(14)
+set.seed(14) # making it reproducible --> seed = 14
+
 # Load required packages
 library(ggplot2)
 library(reshape2)
@@ -438,7 +439,7 @@ The plot shows that with increasing time between each event, the probability tha
 
 ```{r}
 
-set.seed(7) # making it reproducible
+set.seed(7) # making it reproducible --> seed = 7
 
 # Ensure data_table_Pop is a data frame
 data_table_Pop <- as.data.frame(data_table_Pop)
@@ -488,7 +489,7 @@ The following plots show the extinction rate for the wildtype and the mutant sep
 
 ```{r}
 
-set.seed(8) # making it reproducible
+set.seed(8) # making it reproducible --> seed = 8
 
 # enabling plots to be in the same window
 par(mfrow = c(1,2))
@@ -597,7 +598,7 @@ In this boxplot it can be seen, that the populations at medium frequencies ran f
 
 ```{r}
 
-set.seed(9) # making it reproducible
+set.seed(9) # making it reproducible --> seed = 9
 
 # generating a boxplot of the final generation and the frequency
 ggplot(data_table_Pop, aes(x = as.factor(f), y = final_gen)) +
@@ -616,7 +617,7 @@ Similar to the plot before, we want to visualize the relationship of the final g
 
 ```{r}
 
-set.seed(10) # making it reproducible
+set.seed(10) # making it reproducible --> seed = 10
 
 # generating a histogram of the final generation and the frequency
 ggplot(data_table_Pop, aes(x = final_gen, fill = as.factor(f))) +
@@ -635,7 +636,7 @@ At last we wanted to specify the graphs from above and just look at the generati
 
 ```{r}
 
-set.seed(11) # making it reproducible
+set.seed(11) # making it reproducible --> seed = 11
 
 # Filter for populations that went extinct (Final_Pop == 0)
 extinct_pop <- subset(data_table_Pop, Final_Pop == 0)
